@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI 企业知识库 RAG</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">AI Enterprise Knowledge Base</p>
+          <h1>企业知识库 RAG 助手</h1>
+        </div>
+        <a class="docs-link" href="/docs" target="_blank" rel="noreferrer">API Docs</a>
+      </header>
+
+      <section class="workspace">
+        <aside class="panel">
+          <div class="panel-header">
+            <h2>上传文档</h2>
+            <span>PDF</span>
+          </div>
+          <form id="upload-form" class="upload-box">
+            <input id="pdf-file" name="file" type="file" accept="application/pdf" />
+            <button type="submit">上传 PDF</button>
+          </form>
+          <p id="upload-status" class="status">已内置 company.txt，可直接提问。</p>
+
+          <div class="documents">
+            <h3>知识库文件</h3>
+            <ul id="document-list"></ul>
+          </div>
+        </aside>
+
+        <section class="panel qa-panel">
+          <div class="panel-header">
+            <h2>知识库问答</h2>
+            <span>RAG</span>
+          </div>
+
+          <form id="ask-form" class="ask-form">
+            <textarea id="question" rows="4" placeholder="例如：请假流程是什么？"></textarea>
+            <button type="submit">开始提问</button>
+          </form>
+
+          <article class="answer-card">
+            <p class="label">回答</p>
+            <div id="answer" class="answer">
+              上传文档或直接基于 company.txt 提问，系统会检索相关片段并让 GPT 生成回答。
+            </div>
+          </article>
+
+          <article class="sources-card">
+            <p class="label">引用来源</p>
+            <ul id="citations" class="citations">
+              <li>等待提问后展示来源</li>
+            </ul>
+          </article>
+        </section>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

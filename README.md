@@ -1,6 +1,12 @@
-# AI Enterprise RAG Knowledge Base
+# AI 企业知识库 RAG 助手
 
-一个最小可运行的企业知识库 RAG Demo。项目基于 `company.txt` 中的企业流程资料，完成文本切分、Embedding、向量入库、语义检索，并使用 GPT 生成基于知识库内容的回答。
+一个面向企业内部知识问答的 RAG Demo。项目支持读取本地知识文件、上传 PDF 文档、向量化入库、语义检索、基于 GPT 生成回答，并在回答中返回引用来源。
+
+![RAG Web Demo](screenshots/rag-web-demo.png)
+
+## 项目介绍
+
+很多企业内部资料分散在员工手册、流程制度、FAQ 文档中，员工查询成本高，HR 或行政也需要重复回答同类问题。本项目模拟一个企业知识库助手：用户上传文档后，可以直接用自然语言提问，系统会从知识库中检索相关内容，再让大模型基于检索结果生成回答。
 
 ## 技术栈
 
@@ -9,29 +15,36 @@
 - OpenAI Embeddings
 - OpenAI Chat Completions
 - ChromaDB
+- pypdf
+- HTML / CSS / JavaScript
 - Uvicorn
 
 ## 核心功能
 
-- 读取本地企业知识文件 `data/company.txt`
-- 将企业知识文本切分为 Chunk
-- 使用 OpenAI Embedding 模型生成向量
-- 将向量和原文存入 ChromaDB
-- 根据用户问题做语义检索
-- 将检索到的上下文交给 GPT 生成回答
-- 提供 FastAPI 接口和 Swagger 文档
+- 内置企业资料 `data/company.txt`
+- 支持 PDF 上传
+- 支持 PDF 文本解析
+- 支持文本 Chunk 切分
+- 支持 OpenAI Embedding 向量化
+- 支持 ChromaDB 向量检索
+- 支持 GPT 基于检索上下文回答
+- 支持返回引用来源
+- 支持最简 Web 问答界面
+- 支持 FastAPI Swagger 接口文档
 
 ## RAG 流程
 
 ```text
-company.txt
-  -> 文本切分 Chunk
+company.txt / PDF
+  -> 文本解析
+  -> Chunk 切分
   -> OpenAI Embedding
   -> ChromaDB 向量库
   -> 用户提问
   -> 问题向量化
   -> 相似 Chunk 检索
   -> GPT 基于上下文回答
+  -> 返回答案和引用来源
 ```
 
 ## 项目结构
@@ -41,8 +54,14 @@ ai-rag-knowledge-base/
 ├─ app.py
 ├─ requirements.txt
 ├─ README.md
-└─ data/
-   └─ company.txt
+├─ data/
+│  └─ company.txt
+├─ static/
+│  ├─ index.html
+│  ├─ styles.css
+│  └─ app.js
+└─ screenshots/
+   └─ rag-web-demo.png
 ```
 
 ## 运行方式
@@ -53,18 +72,10 @@ ai-rag-knowledge-base/
 pip install -r requirements.txt
 ```
 
-设置 OpenAI API Key。
-
-PowerShell：
+设置 OpenAI API Key：
 
 ```powershell
 $env:OPENAI_API_KEY="你的 API Key"
-```
-
-macOS / Linux：
-
-```bash
-export OPENAI_API_KEY="你的 API Key"
 ```
 
 启动服务：
@@ -73,10 +84,23 @@ export OPENAI_API_KEY="你的 API Key"
 uvicorn app:app --reload
 ```
 
-打开接口文档：
+打开 Web 页面：
+
+```text
+http://127.0.0.1:8000/
+```
+
+打开 API 文档：
 
 ```text
 http://127.0.0.1:8000/docs
+```
+
+如果只是想本地预览页面和交互，不调用 OpenAI，可以开启 Demo Mode：
+
+```powershell
+$env:RAG_DEMO_MODE="true"
+uvicorn app:app --reload
 ```
 
 ## 接口说明
@@ -84,6 +108,26 @@ http://127.0.0.1:8000/docs
 ### GET `/health`
 
 健康检查接口。
+
+### GET `/documents`
+
+查看当前知识库文件列表。
+
+### POST `/upload`
+
+上传 PDF 文档。
+
+请求类型：
+
+```text
+multipart/form-data
+```
+
+字段：
+
+```text
+file: PDF 文件
+```
 
 ### POST `/ask`
 
@@ -102,27 +146,39 @@ http://127.0.0.1:8000/docs
 ```json
 {
   "question": "请假流程是什么？",
-  "answer": "请假流程是：提前一天申请，领导审批，HR备案。",
+  "answer": "请假流程是：提前一天申请，领导审批，HR 备案。",
+  "citations": [
+    {
+      "source": "company.txt",
+      "location": "company profile"
+    }
+  ],
   "contexts": [
-    "请假流程：\n\n提前一天申请\n领导审批\nHR备案"
+    {
+      "text": "请假流程：...",
+      "source": "company.txt",
+      "location": "company profile"
+    }
   ]
 }
 ```
 
 ## 项目亮点
 
-- 使用真实 RAG 链路，而不是简单关键词匹配
-- 向量数据库使用 ChromaDB，适合本地 Demo 和快速验证
-- API 服务使用 FastAPI，便于展示、测试和后续扩展
-- 知识库内容独立放在 `data/company.txt`，结构清晰
-- 当知识库没有相关信息时，提示模型不要编造答案
+- 不是简单关键词匹配，而是完整 RAG 链路
+- 支持 PDF 上传，接近真实企业知识库场景
+- 回答返回引用来源，方便用户判断可信度
+- 使用 ChromaDB 做本地向量库，适合 Demo 和快速迭代
+- 使用 FastAPI 提供接口，方便后续接前端或部署
+- 提供 Web 页面，面试官可以直观看到上传、提问、回答流程
 
 ## 后续优化
 
-- 支持多文档上传
-- 支持 PDF 解析
+- 支持多文件批量上传
+- 支持 Word / Excel / Markdown 文档解析
 - 支持 OCR 图片识别
-- 增加前端问答页面
-- 增加登录和权限控制
+- 支持用户登录和权限控制
+- 支持对话历史
+- 支持文档删除和重新索引
 - 支持 Docker 部署
 - 增加自动化测试和 CI
