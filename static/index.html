@@ -28,6 +28,21 @@
           </form>
           <p id="upload-status" class="status">已内置 company.txt，可直接提问。</p>
 
+          <div class="stats-grid">
+            <div>
+              <strong id="document-count">-</strong>
+              <span>文档数</span>
+            </div>
+            <div>
+              <strong id="chunk-count">-</strong>
+              <span>知识块</span>
+            </div>
+            <div>
+              <strong id="top-k">-</strong>
+              <span>Top-K</span>
+            </div>
+          </div>
+
           <div class="documents">
             <h3>知识库文件</h3>
             <ul id="document-list"></ul>
@@ -57,6 +72,13 @@
             <ul id="citations" class="citations">
               <li>等待提问后展示来源</li>
             </ul>
+          </article>
+
+          <article class="recall-card">
+            <p class="label">Top-K 召回</p>
+            <div id="recall-list" class="recall-list">
+              <div class="empty-state">提问后展示检索到的知识块、来源和匹配分。</div>
+            </div>
           </article>
         </section>
       </section>

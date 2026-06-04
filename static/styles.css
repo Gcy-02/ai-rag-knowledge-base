@@ -155,6 +155,31 @@ button:disabled {
   font-size: 14px;
 }
 
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 22px;
+}
+
+.stats-grid div {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #ffffff;
+  padding: 12px;
+}
+
+.stats-grid strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 22px;
+}
+
+.stats-grid span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .documents ul,
 .citations {
   list-style: none;
@@ -197,7 +222,8 @@ textarea:focus {
 }
 
 .answer-card,
-.sources-card {
+.sources-card,
+.recall-card {
   border-top: 1px solid var(--line);
   margin-top: 22px;
   padding-top: 18px;
@@ -217,6 +243,62 @@ textarea:focus {
   background: #f8fafc;
   padding: 16px;
   line-height: 1.7;
+}
+
+.recall-list {
+  display: grid;
+  gap: 10px;
+}
+
+.recall-item {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 12px;
+}
+
+.recall-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.recall-head span {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.score-bar {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e6ebf3;
+}
+
+.score-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--green);
+}
+
+.recall-item p,
+.empty-state {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.empty-state {
+  margin: 0;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 12px;
 }
 
 @media (max-width: 820px) {

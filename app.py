@@ -55,9 +55,11 @@ class SourceReference(BaseModel):
 
 
 class RetrievedContext(BaseModel):
+    rank: int
     text: str
     source: str
     location: str
+    score: float
 
 
 class AskResponse(BaseModel):
@@ -74,6 +76,13 @@ class UploadResponse(BaseModel):
 
 class DocumentsResponse(BaseModel):
     documents: list[str]
+
+
+class StatsResponse(BaseModel):
+    document_count: int
+    chunk_count: int
+    pdf_count: int
+    top_k: int
 
 
 def split_text(text: str, max_chars: int = 500) -> list[str]:
@@ -153,6 +162,18 @@ def load_all_chunks() -> list[KnowledgeChunk]:
     return chunks
 
 
+def knowledge_stats(top_k: int = 3) -> StatsResponse:
+    documents = {DATA_FILE.name}
+    documents.update(file_path.name for file_path in sorted(UPLOAD_DIR.glob("*.pdf")))
+    chunks = load_all_chunks()
+    return StatsResponse(
+        document_count=len(documents),
+        chunk_count=len(chunks),
+        pdf_count=len(list(UPLOAD_DIR.glob("*.pdf"))),
+        top_k=top_k,
+    )
+
+
 def get_openai_client() -> OpenAI:
     if not os.getenv("OPENAI_API_KEY"):
         raise HTTPException(status_code=500, detail="OPENAI_API_KEY is not configured.")
@@ -209,15 +230,23 @@ def retrieve_with_openai(question: str, top_k: int = 3) -> list[RetrievedContext
     client = get_openai_client()
     query_embedding = embed_texts(client, [question])[0]
     collection = build_collection()
-    results = collection.query(query_embeddings=[query_embedding], n_results=top_k)
+    results = collection.query(
+        query_embeddings=[query_embedding],
+        n_results=top_k,
+        include=["documents", "metadatas", "distances"],
+    )
 
     contexts = []
-    for text, metadata in zip(results["documents"][0], results["metadatas"][0]):
+    rows = zip(results["documents"][0], results["metadatas"][0], results["distances"][0])
+    for rank, (text, metadata, distance) in enumerate(rows, start=1):
+        score = round(1 / (1 + float(distance)), 4)
         contexts.append(
             RetrievedContext(
+                rank=rank,
                 text=text,
                 source=str(metadata.get("source", "")),
                 location=str(metadata.get("location", "")),
+                score=score,
             )
         )
     return contexts
@@ -240,10 +269,17 @@ def retrieve_for_demo(question: str, top_k: int = 3) -> list[RetrievedContext]:
     positive_matches = [item for item in ranked if item[1] > 0]
     selected = positive_matches if positive_matches else ranked[:1]
     selected = sorted(selected, key=lambda item: item[1], reverse=True)
+    max_score = max((score_value for _, score_value in selected), default=1) or 1
 
     return [
-        RetrievedContext(text=chunk.text, source=chunk.source, location=chunk.location)
-        for chunk, _ in selected[:top_k]
+        RetrievedContext(
+            rank=rank,
+            text=chunk.text,
+            source=chunk.source,
+            location=chunk.location,
+            score=round(score_value / max_score, 4),
+        )
+        for rank, (chunk, score_value) in enumerate(selected[:top_k], start=1)
         if chunk.text.strip()
     ]
 
@@ -293,8 +329,11 @@ def answer_for_demo(question: str, contexts: list[RetrievedContext]) -> str:
     if not contexts:
         return "知识库中没有找到相关信息。"
 
-    source = contexts[0]
-    return f"根据 {source.source}（{source.location}）：\n{source.text}"
+    lines = ["根据 Top-K 召回结果："]
+    for context in contexts:
+        lines.append(f"\n[{context.rank}] {context.source}（{context.location}）")
+        lines.append(context.text)
+    return "\n".join(lines)
 
 
 @app.get("/")
@@ -312,6 +351,11 @@ def documents():
     files = [DATA_FILE.name]
     files.extend(file_path.name for file_path in sorted(UPLOAD_DIR.glob("*.pdf")))
     return DocumentsResponse(documents=files)
+
+
+@app.get("/stats", response_model=StatsResponse)
+def stats():
+    return knowledge_stats()
 
 
 @app.post("/upload", response_model=UploadResponse)
