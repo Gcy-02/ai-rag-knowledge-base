@@ -86,6 +86,7 @@ class StatsResponse(BaseModel):
 
 
 def split_text(text: str, max_chars: int = 500) -> list[str]:
+    # V1 先按段落做简单切块，方便看懂；正式项目可以换成 token-based splitter。
     paragraphs = [paragraph.strip() for paragraph in text.split("\n\n") if paragraph.strip()]
     chunks = []
     current = ""
@@ -157,6 +158,7 @@ def load_all_chunks() -> list[KnowledgeChunk]:
         try:
             chunks.extend(load_pdf_chunks(file_path))
         except Exception:
+            # Demo 项目里先跳过解析失败的 PDF，避免一个坏文件把服务拖死。
             continue
 
     return chunks
@@ -253,6 +255,7 @@ def retrieve_with_openai(question: str, top_k: int = 3) -> list[RetrievedContext
 
 
 def retrieve_for_demo(question: str, top_k: int = 3) -> list[RetrievedContext]:
+    # 没有 OpenAI Key 时，用关键词匹配模拟 Top-K，主要为了能展示页面流程。
     specific_keywords = [keyword for keyword in ["请假", "报销", "退款"] if keyword in question]
     generic_keywords = [
         keyword
