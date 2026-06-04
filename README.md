@@ -92,6 +92,8 @@ Top-K：3
 
 我单独放了一份 [PROJECT_NOTES.md](PROJECT_NOTES.md)，里面是我自己准备讲解时会看的笔记。
 
+如果是第一次看这个项目，可以先读 [LEARNING_GUIDE.md](LEARNING_GUIDE.md)。那份更像学习路线，按“先会跑、再会讲、最后会改”的顺序写。
+
 ## 项目结构
 
 ```text
